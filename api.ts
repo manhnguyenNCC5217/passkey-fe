@@ -104,7 +104,7 @@ export async function fetchChallenge(options: ChallengeRequestOptions = {}) {
 
   const rp = {
     name: "SimpleWebAuthn Example", // service name
-    id: "localhost", // domain
+    id: process.env.NEXT_PUBLIC_RP_ID || "", // domain
   };
 
   // ref: https://simplewebauthn.dev/docs/packages/server#1-generate-registration-options
@@ -156,7 +156,7 @@ export function signinRequestChallenge({
   }
 
   return generateAuthenticationOptions({
-    rpID: "localhost",
+    rpID: process.env.NEXT_PUBLIC_RP_ID,
     allowCredentials: [],
     userVerification,
   });
@@ -174,8 +174,8 @@ export function signinRequest(challenge: string) {
   const verification = verifyAuthenticationResponse({
     response: {} as any,
     expectedChallenge: challenge,
-    expectedOrigin: "http://localhost:3000",
-    expectedRPID: "localhost",
+    expectedOrigin: process.env.NEXT_PUBLIC_BASE_URL || "",
+    expectedRPID: process.env.NEXT_PUBLIC_RP_ID || "",
     authenticator: {} as any,
   });
 }

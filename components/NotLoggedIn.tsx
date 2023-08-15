@@ -2,32 +2,46 @@ import { useAuth } from "../hooks/auth";
 
 export const NotLoggedIn = () => {
   const {
-    signinWithEmailLink,
+    registerWithEmailAndPassWord,
+    loginWithEmailAndPassword,
     signinWithPassKey,
-    email,
-    setEmail,
+    userInfo,
+    setUserInfo,
     canUsePassKey,
   } = useAuth();
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserInfo((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   return (
     <div>
       <h1>Vui lòng đăng nhập bên dưới</h1>
       <ul>
-        <li style={{ display: "flex", gap: "16px" }}>
+        <li style={{ listStyle: "none" }}>
           <input
             type="email"
             name="email"
             id="email"
             placeholder="hoge@example.com"
             autoComplete="email webauthn"
-            value={email}
-            onChange={handleEmailChange}
+            value={userInfo.email}
+            onChange={handleInputChange}
           />
-          <button onClick={signinWithEmailLink}>Login with Email</button>
+          <br />
+          <br />
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="password"
+            value={userInfo.password}
+            onChange={handleInputChange}
+          />
+          <br />
+          <br />
+          <button onClick={registerWithEmailAndPassWord}>Register</button>
+          <button onClick={loginWithEmailAndPassword}>Login with Email</button>
         </li>
         {canUsePassKey && (
           <button onClick={signinWithPassKey}>Login with Passkey</button>

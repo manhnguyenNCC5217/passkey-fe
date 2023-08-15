@@ -1,67 +1,90 @@
-import { initializeApp } from "firebase/app";
+import { FirebaseError, initializeApp } from "firebase/app";
 import {
   User,
   getAuth,
-  isSignInWithEmailLink,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
   signOut,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
-import { useRouter } from "next/router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useEffectOnce } from "react-use";
 import { fetchChallenge, signinRequest, signinRequestChallenge } from "../api";
 import base64url from "base64url";
 import { string2Buffer } from "@utils";
+import { getExistOrCreateUserId } from "@helpers/user";
 
-const app = initializeApp({
+const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_APP_ID,
-});
+  measurementId: process.env.NEXT_PUBLIC_MESUREMENT_ID,
+};
+
+export const firebase = initializeApp(firebaseConfig);
+export const auth = getAuth(firebase);
+
+export interface IUserInfo {
+  email: string;
+  password: string;
+}
 
 export function useAuth() {
-  const auth = getAuth(app);
-  const [email, setEmail] = useState("");
+  const [userInfo, setUserInfo] = useState<IUserInfo>({} as IUserInfo);
   const [user, setUser] = useState<User | null>(null);
   const [canUsePassKey, setCanUsePassKey] = useState(false);
-  const router = useRouter();
+
+  const observer: any = useCallback(async (user: User) => {
+    setUser(user);
+
+    if (user) {
+      await getExistOrCreateUserId();
+    }
+  }, []);
 
   const updateUserState = () => {
-    onAuthStateChanged(getAuth(app), setUser);
+    onAuthStateChanged(getAuth(firebase), observer);
   };
 
-  const signinWithEmailLink = async () => {
-    await sendSignInLinkToEmail(auth, email, {
-      url: "http://localhost:3001/signin",
-      handleCodeInApp: true,
-    });
-
-    window.localStorage.setItem("emailForSignIn", email);
-
-    alert(`Email sent to ${email}. Click the link to sign in.`);
+  const registerWithEmailAndPassWord = async () => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userInfo.email,
+        userInfo.password
+      );
+      const user = userCredential.user;
+      console.log({ userCredential, user });
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log({ errorCode, errorMessage });
+        alert("Register failure!");
+      }
+    }
   };
 
-  const verifySignInWithEmailLink = async () => {
-    if (!isSignInWithEmailLink(auth, window.location.href)) {
-      return;
+  const loginWithEmailAndPassword = async () => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        userInfo.email,
+        userInfo.password
+      );
+      const user = userCredential.user;
+      console.log({ userCredential, user });
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log({ errorCode, errorMessage });
+        alert(`Login failure! ${errorMessage}`);
+      }
     }
-
-    let email = window.localStorage.getItem("emailForSignIn");
-    if (!email) {
-      email = window.prompt("Please provide your email for confirmation");
-    }
-
-    await signInWithEmailLink(auth, email!, window.location.href);
-
-    window.localStorage.removeItem("emailForSignIn");
-    updateUserState();
-
-    router.push("/");
   };
 
   const signout = () => {
@@ -72,20 +95,8 @@ export function useAuth() {
   const passKeyFeatureDetection = () => {
     // feature detection
     // ref: https://web.dev/passkey-registration/#feature-detection
-    if (
-      window.PublicKeyCredential &&
-      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
-      PublicKeyCredential.isConditionalMediationAvailable
-    ) {
-      // Check if user verifying platform authenticator is available.
-      Promise.all([
-        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(),
-        PublicKeyCredential.isConditionalMediationAvailable(),
-      ]).then((results) => {
-        if (results.every((r) => r === true)) {
-          setCanUsePassKey(true);
-        }
-      });
+    if (window.PublicKeyCredential) {
+      setCanUsePassKey(true);
     }
   };
 
@@ -107,14 +118,14 @@ export function useAuth() {
         challenge: string2Buffer(base64url.decode(challengeResponse.challenge)),
         rp: {
           name: "SimpleWebAuthn Example",
-          id: "localhost",
+          id: process.env.NEXT_PUBLIC_RP_ID,
         },
         user: {
           id: string2Buffer(challengeResponse.userId),
           // 以下 name と displayName はほぼ同じ。なんで別なのかわからん
           // ref: https://zenn.dev/inabajunmr/articles/webauthn-input-table-level3#publickeycredentialuserentity
-          name: "JJ",
-          displayName: "JJ Display Name",
+          name: user?.email || "",
+          displayName: user?.email || "",
         },
         pubKeyCredParams: challengeResponse.publicKeyCredentialParams,
         excludeCredentials: challengeResponse.excludeCredentials,
@@ -142,7 +153,7 @@ export function useAuth() {
     const cred = await navigator.credentials.get({
       publicKey: {
         challenge: string2Buffer(base64url.decode(challenge)),
-        rpId: "localhost",
+        rpId: process.env.NEXT_PUBLIC_RP_ID,
       },
       mediation: "required",
     });
@@ -161,13 +172,12 @@ export function useAuth() {
   });
 
   return {
-    signinWithEmailLink,
-    verifySignInWithEmailLink,
+    loginWithEmailAndPassword,
+    registerWithEmailAndPassWord,
     signinWithPassKey,
     signout,
-    email,
-    setEmail,
-    auth,
+    userInfo,
+    setUserInfo,
     user,
     canUsePassKey,
     registerPassKeyRequest,
