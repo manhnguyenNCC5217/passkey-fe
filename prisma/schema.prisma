@@ -13,5 +13,6 @@ datasource db {
 model User {
   id      Int     @id @default(autoincrement())
   authId  String  @unique
+  email   String
   passkey String?
 }

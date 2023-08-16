@@ -1,20 +1,24 @@
 import { NotLoggedIn } from "../components/NotLoggedIn";
 import { useAuth } from "../hooks/auth";
+import { useFirebaseAuth } from "@context/firebaseContext";
 
 export default function Home() {
-  const { user, signout, canUsePassKey, registerPassKeyRequest } = useAuth();
+  const { user, signOut } = useFirebaseAuth();
+  const { canUsePassKey, registerPassKeyRequest } = useAuth();
 
-  if (user == null) {
+  if (!user) {
     return <NotLoggedIn />;
   }
 
   return (
     <div>
       <h1>Hello, {user.email}</h1>
-      <button onClick={signout}>Logout</button>
+      <button onClick={signOut}>Logout</button>
 
       {canUsePassKey && (
-        <button onClick={registerPassKeyRequest}>Create my Passkey</button>
+        <button onClick={() => registerPassKeyRequest(user)}>
+          Create my Passkey
+        </button>
       )}
     </div>
   );

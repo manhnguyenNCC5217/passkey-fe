@@ -11,8 +11,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const decodedToken = await decodeToken(token || "");
       const authUId = decodedToken?.uid;
+      const email = decodedToken?.email;
 
-      if (!authUId) {
+      if (!authUId || !email) {
         return res.status(404).json({ message: "User Not Found!" });
       }
 
@@ -21,6 +22,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       if (!user) {
         user = await createUserByAuth({
           authId: authUId,
+          email,
           passkey: "",
         });
       }

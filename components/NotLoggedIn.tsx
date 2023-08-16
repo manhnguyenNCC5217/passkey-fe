@@ -16,7 +16,7 @@ export const NotLoggedIn = () => {
 
   return (
     <div>
-      <h1>Vui lòng đăng nhập bên dưới</h1>
+      <h1>Please Sign in</h1>
       <ul>
         <li style={{ listStyle: "none" }}>
           <input

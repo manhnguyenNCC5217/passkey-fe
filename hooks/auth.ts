@@ -1,18 +1,15 @@
 import { FirebaseError, initializeApp } from "firebase/app";
 import {
-  User,
   getAuth,
-  signOut,
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  User,
 } from "firebase/auth";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useEffectOnce } from "react-use";
 import { fetchChallenge, signinRequest, signinRequestChallenge } from "../api";
 import base64url from "base64url";
 import { string2Buffer } from "@utils";
-import { getExistOrCreateUserId } from "@helpers/user";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_API_KEY,
@@ -34,20 +31,7 @@ export interface IUserInfo {
 
 export function useAuth() {
   const [userInfo, setUserInfo] = useState<IUserInfo>({} as IUserInfo);
-  const [user, setUser] = useState<User | null>(null);
   const [canUsePassKey, setCanUsePassKey] = useState(false);
-
-  const observer: any = useCallback(async (user: User) => {
-    setUser(user);
-
-    if (user) {
-      await getExistOrCreateUserId();
-    }
-  }, []);
-
-  const updateUserState = () => {
-    onAuthStateChanged(getAuth(firebase), observer);
-  };
 
   const registerWithEmailAndPassWord = async () => {
     try {
@@ -87,11 +71,6 @@ export function useAuth() {
     }
   };
 
-  const signout = () => {
-    signOut(auth);
-    updateUserState();
-  };
-
   const passKeyFeatureDetection = () => {
     // feature detection
     // ref: https://web.dev/passkey-registration/#feature-detection
@@ -100,7 +79,7 @@ export function useAuth() {
     }
   };
 
-  const registerPassKeyRequest = async () => {
+  const registerPassKeyRequest = async (user: User) => {
     const options = {
       attestation: "none",
       authenticatorSelection: {
@@ -124,8 +103,8 @@ export function useAuth() {
           id: string2Buffer(challengeResponse.userId),
           // 以下 name と displayName はほぼ同じ。なんで別なのかわからん
           // ref: https://zenn.dev/inabajunmr/articles/webauthn-input-table-level3#publickeycredentialuserentity
-          name: user?.email || "",
-          displayName: user?.email || "",
+          name: user.email || "",
+          displayName: user.email || "",
         },
         pubKeyCredParams: challengeResponse.publicKeyCredentialParams,
         excludeCredentials: challengeResponse.excludeCredentials,
@@ -136,6 +115,7 @@ export function useAuth() {
       },
     });
 
+    // send credentials to backend store
     console.log(credentials);
   };
 
@@ -167,7 +147,6 @@ export function useAuth() {
   };
 
   useEffectOnce(() => {
-    updateUserState();
     passKeyFeatureDetection();
   });
 
@@ -175,10 +154,8 @@ export function useAuth() {
     loginWithEmailAndPassword,
     registerWithEmailAndPassWord,
     signinWithPassKey,
-    signout,
     userInfo,
     setUserInfo,
-    user,
     canUsePassKey,
     registerPassKeyRequest,
   };
