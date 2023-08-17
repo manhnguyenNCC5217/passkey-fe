@@ -1,14 +1,14 @@
-import { useAuth } from "../hooks/auth";
+import { useFirebaseAuth } from "@context/firebaseContext";
+import { usePasskeyAuth } from "../hooks/usePasskeyAuth";
 
 export const NotLoggedIn = () => {
   const {
-    registerWithEmailAndPassWord,
-    loginWithEmailAndPassword,
-    signinWithPassKey,
     userInfo,
     setUserInfo,
-    canUsePassKey,
-  } = useAuth();
+    registerWithEmailAndPassWord,
+    loginWithEmailAndPassword,
+  } = useFirebaseAuth();
+  const { signinWithPassKey, canUsePassKey } = usePasskeyAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserInfo((prev) => ({ ...prev, [e.target.name]: e.target.value }));

@@ -16,3 +16,9 @@ export const decodeToken = async (token: string) => {
     return null;
   }
 };
+
+export const createCustomToken = async (uid: string) => {
+  const customToken = await auth().createCustomToken(uid);
+
+  return customToken;
+};

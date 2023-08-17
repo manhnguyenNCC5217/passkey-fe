@@ -1,5 +1,5 @@
+import { auth } from "@context/firebaseContext";
 import axios, { AxiosError } from "axios";
-import { auth } from "@hooks/auth";
 
 export class ApiError extends Error {
   status?: string;

@@ -1,6 +1,8 @@
-import { decodeToken } from "@helpers/firebaseAuthService";
-import { createUserByAuth, findOneByAuthUid } from "@helpers/prisma";
+import { decodeToken } from "@services/firebaseAuthService";
+import { createUserByAuth, findOneByAuthUid } from "@services/prisma";
 import { NextApiRequest, NextApiResponse } from "next";
+import { withIronSessionApiRoute } from "iron-session/next";
+import { ironOptions } from "./config";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method, headers } = req;
@@ -23,7 +25,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         user = await createUserByAuth({
           authId: authUId,
           email,
-          passkey: "",
         });
       }
 
@@ -37,4 +38,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default handler;
+export default withIronSessionApiRoute(handler, ironOptions);

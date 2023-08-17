@@ -11,8 +11,19 @@ datasource db {
 }
 
 model User {
-  id      Int     @id @default(autoincrement())
-  authId  String  @unique
+  id      Int       @id @default(autoincrement())
+  authId  String    @unique
   email   String
-  passkey String?
+  devices devices[]
+}
+
+model devices {
+  id                  Int    @id @default(autoincrement())
+  data                String
+  userAuthId          String
+  credentialID        String
+  credentialPublicKey String
+  transports          String
+  counter             Int
+  user                User   @relation(fields: [userAuthId], references: [authId])
 }
