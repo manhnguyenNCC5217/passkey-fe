@@ -53,12 +53,17 @@ interface FirebaseProviderProps {
   children: React.ReactNode;
 }
 
+const initUserInfo: IUserInfo = {
+  email: "",
+  password: "",
+};
+
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [userInfo, setUserInfo] = useState<IUserInfo>({} as IUserInfo);
+  const [userInfo, setUserInfo] = useState<IUserInfo>(initUserInfo);
   const [user, setUser] = React.useState<User | null>(null);
 
   const registerWithEmailAndPassWord = useCallback(async () => {
@@ -69,6 +74,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         userInfo.password
       );
       const user = userCredential.user;
+      if (user) {
+        setUserInfo(initUserInfo);
+      }
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         const errorCode = error.code;
@@ -86,6 +94,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         userInfo.password
       );
       const user = userCredential.user;
+      if (user) {
+        setUserInfo(initUserInfo);
+      }
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         const errorMessage = error.message;
